@@ -1,7 +1,9 @@
 #include <math.h>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
+
 void pobierzX(double *x, int n)
 {
 	cout << "podaj X" << endl;
@@ -10,16 +12,17 @@ void pobierzX(double *x, int n)
 		cin >> x[i];
 	}
 }
+
 // Szacowanie wartoœci punktu 'x' w równoodleg³ym wybieraniu punktów na zadanym przedziale
 double r_xp(int &n, int &i, double &a, double &b)
 {
 	return a + i * ((b - a) / n);
 }
 
-//tablica punktow, ilosc punktow, zakres punktow
+// Tablica 'n' równoodleg³ych punktów na zadanym przedziale <a; b>
 double *rownoodlegleX(int n, double &a, double &b)
 {
-	if ((a<b) && (n> 0)) {
+	if ((a < b) && (n > 0)) {
 		double *tab = new double[n + 1];
 
 		for (int i = 0; i <= n; i++)
@@ -29,23 +32,15 @@ double *rownoodlegleX(int n, double &a, double &b)
 		return tab;
 	}
 	else {
-		string exc;
-		if (n <= 0) {
-			exc = "InsufficientNodesAmountException: n <= 0; at ";
-		}
-		else if (a >= b) {
-			exc = "InsufficientRangeException: parameter float &a <= float &b; at ";
-		}
-		else {
-			exc = "GeneralException; at ";
-		}
+		return NULL; // error
 	}
 }
 
 double funkcjaAproksymowana(double x)
 {
-	return sin(abs(x));        //1 typ funkcji jest to funkcja testowa
+	return sin(x)*sin(2 * x);
 }
+
 double getG(int n, double x[], int k, int j) {
 	double temp = 0;
 	for (int i = 0; i < n; i++) {
@@ -62,7 +57,8 @@ double getR(int n, double x[], int k, double *f) {
 	return temp;
 }
 
-double *APROX(double x[], double y[], double wyniki[], int m, int n) {
+// g³ówna funkcja, wyznacza wêz³y funkcji aproksymuj¹cej
+double *APROX(double x[], double y[], int m, int n) {
 
 	double *macierzR = new double[m];
 	double **macierzG = new double*[m];
@@ -74,25 +70,26 @@ double *APROX(double x[], double y[], double wyniki[], int m, int n) {
 	for (int i = 0; i < m; i++) {
 		for (int j = 0; j < m; j++) {
 			macierzG[i][j] = getG(n, x, i, j);
-			cout << macierzG[i][j] << " ";
+	//		cout << macierzG[i][j] << " ";	
 		}
-		cout << endl;
-		macierzR[i] = getR(n, x, i, y);//sin(x[i]));
+	//	cout << endl;
+		macierzR[i] = getR(n, x, i, y);
 	}
 
 	for (int i = 0; i < m; i++) {
 		macierzG[i][m] = macierzR[i];
 	} // Sklejamy macierz R z G uzywajac dodatkowej kolumny zadeklarowanej za pomoc¹ [m+1]
 
-	  // Ga³s \/
+	// Gauss \/
 	int a, b, c;
 	double suma;
+
 	for (a = 0; a < m - 1; a++)
 	{
 		for (b = a + 1; b < m; b++)
 		{
-			for (c = a; c<m + 1; c++)
-				macierzG[b][c] = macierzG[b][c] - (macierzG[b][a] / macierzG[a][a]) *macierzG[a][c];
+			for (c = a; c < m + 1; c++)
+				macierzG[b][c] = macierzG[b][c] - (macierzG[b][a] / macierzG[a][a]) * macierzG[a][c];
 		}
 	}
 
@@ -115,6 +112,24 @@ double *APROX(double x[], double y[], double wyniki[], int m, int n) {
 	delete[] macierzG;
 	return macierzR;
 }
+
+double *wartosciFunkcjiAproksymujacej(double *x, double *APRX, int n, int m)
+{
+	double *wyniki = new double[n];
+
+	for (int i = 0; i < n; i++)
+	{
+		wyniki[i] = 0;
+
+		for (int j = 0; j < m; j++)
+		{
+			wyniki[i] += APRX[j] * pow(x[i], j);
+		}
+	}
+
+	return wyniki;
+}
+
 //tabela A to wyniki gausa
 double bladAProksymacji(double *a, double *x, double *f, int n, int m)
 {
@@ -133,44 +148,101 @@ double bladAProksymacji(double *a, double *x, double *f, int n, int m)
 	sumaPotegowa = sqrt(sumaPotegowa);
 	return sumaPotegowa;
 }
+
 void pobierzDane(int &n, int &m, double &a, double &b)
 {
-	cout << "Podaj ilos punktow" << endl;
+	cout << "Podaj ilosc punktow: ";
 	cin >> n;
-	cout << "Podaj stopien wielomianu" << endl;
+	cout << "Podaj stopien wielomianu: ";
 	cin >> m;
-	cout << "Podaj zakres aproksymacji" << endl;
+	cout << "Podaj przedzial aproksymacji: ";
 	cin >> a >> b;
 }
+
 int main()
 {
 	int n, m;
-	double a, b;
-	double *x;
-	double *y;
-	double *wyniki;
+	double a, b, *x, *y, *wyniki, *wynikiAprx;
+
 	pobierzDane(n, m, a, b);
-	wyniki = new double[m];
 	y = new double[n];
 	x = rownoodlegleX(n - 1, a, b);
+
+	ofstream plikWynikowy, plikBledow;
+	plikWynikowy.open("wyniki.txt");
+	plikBledow.open("bledy.txt");
+
+	plikWynikowy << n << " " << m << " " << a << " " << b << endl;
+
+	plikWynikowy << "____f(x)____" << endl;
+
 	for (int i = 0; i < n; i++)
 	{
 		y[i] = funkcjaAproksymowana(x[i]);
+		plikWynikowy << y[i] << endl;
 	}
+
+	plikWynikowy << "____x____" << endl;
+
 	for (int i = 0; i < n; i++)
 	{
-		cout << i << " " << x[i] << " " << y[i] << endl;
+	//	cout << i << " " << x[i] << " " << y[i] << endl;
+		plikWynikowy << x[i] << endl;
 	}
-	wyniki = APROX(x, y, wyniki, m, n);
+
+	plikWynikowy << "____wêz³y____" << endl;
+
+	wyniki = APROX(x, y, m, n);
+
 	for (int i = 0; i < m; i++)
 	{
-		cout << wyniki[i] << endl;
+	//	cout << wyniki[i] << endl;
+		plikWynikowy << wyniki[i] << endl;
+	};
+
+	plikWynikowy << "____L(x)____" << endl;
+
+	wynikiAprx = wartosciFunkcjiAproksymujacej(x, wyniki, n, m);
+
+	for (int i = 0; i < n; i++)
+	{
+		//	cout << i << " " << x[i] << " " << y[i] << endl;
+		plikWynikowy << wynikiAprx[i] << endl;
 	}
-	cout << bladAProksymacji(wyniki, x, y, n, m);
+
+	plikWynikowy << endl << bladAProksymacji(wyniki, x, y, n, m);
+
 	delete[] x;
 	delete[] y;
 	delete[] wyniki;
+
+	/*
+	Pêtla zapisuj¹ca b³êdy aproksymacji do pliku, stopnie wielomianu od 1 do 20
+	*/
+	for (m = 1; m <= 20; m++)
+	{
+		y = new double[n];
+		x = rownoodlegleX(n - 1, a, b);
+
+		for (int i = 0; i < n; i++)
+		{
+			y[i] = funkcjaAproksymowana(x[i]);
+		}
+
+		wyniki = APROX(x, y, m, n);
+
+		plikBledow << m << " " << bladAProksymacji(wyniki, x, y, n, m) << endl;
+
+		delete[] x;
+		delete[] y;
+		delete[] wyniki;
+	}
+
+	plikWynikowy.close();
+	plikBledow.close();
+
 	cin.ignore();
 	getchar();
+
 	return 0;
 }
