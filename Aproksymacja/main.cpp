@@ -81,27 +81,29 @@ double *APROX(double x[], double y[], int m, int n) {
 	} // Sklejamy macierz R z G uzywajac dodatkowej kolumny zadeklarowanej za pomoc¹ [m+1]
 
 	// Gauss \/
-	int a, b, c;
+	int k, i, j;
 	double suma;
 
-	for (a = 0; a < m - 1; a++)
+	for (k = 0; k < m - 1; k++)
 	{
-		for (b = a + 1; b < m; b++)
+		for (i = k + 1; i < m; i++)
 		{
-			for (c = a; c < m + 1; c++)
-				macierzG[b][c] = macierzG[b][c] - (macierzG[b][a] / macierzG[a][a]) * macierzG[a][c];
+			for (j = k; j < m + 1; j++)
+			{
+				macierzG[i][j] = macierzG[i][j] - ((macierzG[i][k] * macierzG[k][j]) / macierzG[k][k]);
+			}
 		}
 	}
 
 	macierzR[m - 1] = macierzG[m - 1][m] / macierzG[m - 1][m - 1];
 
-	for (b = m - 2; b >= 0; b--)
+	for (i = m - 2; i >= 0; i--)
 	{
 		suma = 0;
-		for (c = b + 1; c < m; c++)
+		for (j = i + 1; j < m; j++)
 		{
-			suma += (macierzG[b][c] * macierzR[c]);
-			macierzR[b] = (macierzG[b][m] - suma) / macierzG[b][b];
+			suma += (macierzG[i][j] * macierzR[j]);
+			macierzR[i] = (macierzG[i][m] - suma) / macierzG[i][i];
 		}
 	}
 
@@ -111,23 +113,6 @@ double *APROX(double x[], double y[], int m, int n) {
 	}
 	delete[] macierzG;
 	return macierzR;
-}
-
-double *wartosciFunkcjiAproksymujacej(double *x, double *APRX, int n, int m)
-{
-	double *wyniki = new double[n];
-
-	for (int i = 0; i < n; i++)
-	{
-		wyniki[i] = 0;
-
-		for (int j = 0; j < m; j++)
-		{
-			wyniki[i] += APRX[j] * pow(x[i], j);
-		}
-	}
-
-	return wyniki;
 }
 
 //tabela A to wyniki gausa
@@ -168,13 +153,15 @@ int main()
 	y = new double[n];
 	x = rownoodlegleX(n - 1, a, b);
 
-	ofstream plikWynikowy, plikBledow;
+	ofstream plikWynikowy;
 	plikWynikowy.open("wyniki.txt");
-	plikBledow.open("bledy.txt");
 
-	plikWynikowy << n << " " << m << " " << a << " " << b << endl;
+	plikWynikowy << "n " << n << endl;
+	plikWynikowy << "m " << m << endl;
+	plikWynikowy << "a " << a << endl;
+	plikWynikowy << "b " << b << endl;
 
-	plikWynikowy << "____f(x)____" << endl;
+	plikWynikowy << "f(x)" << endl;
 
 	for (int i = 0; i < n; i++)
 	{
@@ -182,7 +169,7 @@ int main()
 		plikWynikowy << y[i] << endl;
 	}
 
-	plikWynikowy << "____x____" << endl;
+	plikWynikowy << "x" << endl;
 
 	for (int i = 0; i < n; i++)
 	{
@@ -190,7 +177,7 @@ int main()
 		plikWynikowy << x[i] << endl;
 	}
 
-	plikWynikowy << "____wêz³y____" << endl;
+	plikWynikowy << "wêz³y" << endl;
 
 	wyniki = APROX(x, y, m, n);
 
@@ -200,46 +187,15 @@ int main()
 		plikWynikowy << wyniki[i] << endl;
 	};
 
-	plikWynikowy << "____L(x)____" << endl;
-
-	wynikiAprx = wartosciFunkcjiAproksymujacej(x, wyniki, n, m);
-
-	for (int i = 0; i < n; i++)
-	{
-		//	cout << i << " " << x[i] << " " << y[i] << endl;
-		plikWynikowy << wynikiAprx[i] << endl;
-	}
-
-	plikWynikowy << endl << bladAProksymacji(wyniki, x, y, n, m);
+	plikWynikowy << "B³¹d: " << endl << bladAProksymacji(wyniki, x, y, n, m);
 
 	delete[] x;
 	delete[] y;
 	delete[] wyniki;
-
-	/*
-	Pêtla zapisuj¹ca b³êdy aproksymacji do pliku, stopnie wielomianu od 1 do 20
-	*/
-	for (m = 1; m <= 20; m++)
-	{
-		y = new double[n];
-		x = rownoodlegleX(n - 1, a, b);
-
-		for (int i = 0; i < n; i++)
-		{
-			y[i] = funkcjaAproksymowana(x[i]);
-		}
-
-		wyniki = APROX(x, y, m, n);
-
-		plikBledow << m << " " << bladAProksymacji(wyniki, x, y, n, m) << endl;
-
-		delete[] x;
-		delete[] y;
-		delete[] wyniki;
-	}
+	
+	cout << "Gotowe.";
 
 	plikWynikowy.close();
-	plikBledow.close();
 
 	cin.ignore();
 	getchar();

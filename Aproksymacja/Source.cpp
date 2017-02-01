@@ -25,3 +25,29 @@ for (i = n - 2; i >= 0; i--)
 	}
 }
 */
+
+
+//	wynikiAprx = wartosciFunkcjiAproksymujacej(x, wyniki, n, m);
+
+/*
+Pêtla zapisuj¹ca b³êdy aproksymacji do pliku, stopnie wielomianu od 1 do 20
+*//*
+for (m = 1; m <= 20; m++)
+{
+y = new double[n];
+x = rownoodlegleX(n - 1, a, b);
+
+for (int i = 0; i < n; i++)
+{
+y[i] = funkcjaAproksymowana(x[i]);
+}
+
+wyniki = APROX(x, y, m, n);
+
+plikBledow << m << " " << bladAProksymacji(wyniki, x, y, n, m) << endl;
+
+delete[] x;
+delete[] y;
+delete[] wyniki;
+}
+*/
